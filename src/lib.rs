@@ -9,31 +9,30 @@ const HEX_CHARS: &[u8] = b"0123456789abcdef";
 pub struct Eui48([u8; 6]);
 pub struct Eui64([u8; 8]);
 
+macro_rules! to_hex_string {
+    ($eui: expr, $size: ty) => {{
+        let mut vec = Vec::<u8, $size>::new();
+
+        for &byte in $eui.0.iter() {
+            vec.push(HEX_CHARS[(byte >> 4) as usize]).unwrap();
+            vec.push(HEX_CHARS[(byte & 0xf) as usize]).unwrap();
+        }
+
+        String::from_utf8(vec).unwrap()
+    }};
+}
+
 impl Eui48 {
     #[inline]
     pub fn to_string(&self) -> String<U12> {
-        let mut to_string = Vec::new();
-
-        for &byte in self.0.iter() {
-            to_string.push(HEX_CHARS[(byte >> 4) as usize]).unwrap();
-            to_string.push(HEX_CHARS[(byte & 0xf) as usize]).unwrap();
-        }
-
-        String::from_utf8(to_string).unwrap()
+        to_hex_string!(self, U12)
     }
 }
 
 impl Eui64 {
     #[inline]
     pub fn to_string(&self) -> String<U16> {
-        let mut to_string = Vec::new();
-
-        for &byte in self.0.iter() {
-            to_string.push(HEX_CHARS[(byte >> 4) as usize]).unwrap();
-            to_string.push(HEX_CHARS[(byte & 0xf) as usize]).unwrap();
-        }
-
-        String::from_utf8(to_string).unwrap()
+        to_hex_string!(self, U16)
     }
 }
 
@@ -76,7 +75,7 @@ fn test_eui48_to_string() {
 }
 
 #[test]
-fn test_eui64_display() {
+fn test_eui64_to_string() {
     let eui64 = Eui64::from(5583992946972634863);
 
     assert_eq!(eui64.to_string(), "4d7e540000972eef")
