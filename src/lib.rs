@@ -18,7 +18,7 @@ macro_rules! to_hex_string {
             vec.push(HEX_CHARS[(byte & 0xf) as usize]).unwrap();
         }
 
-        String::from_utf8(vec).unwrap()
+        unsafe { String::from_utf8_unchecked(vec) }
     }};
 }
 
