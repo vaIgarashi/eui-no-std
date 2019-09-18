@@ -3,6 +3,14 @@ name = "eui-no-std"
 version = "0.1.0"
 authors = ["vagola <vladislavs.golubs@yandex.ru>"]
 edition = "2018"
+homepage = "https://github.com/vagola/eui-no-std"
+repository = "https://github.com/vagola/eui-no-std"
+keywords = ["eui", "eui-48", "eui-64", "no-std"]
+readme = "README.md"
 
 [dependencies]
 heapless = "0.5"
+
+[badges]
+travis-ci = { repository = "vagola/eui-no-std", branch = "master" }
+codecov = { repository = "vagola/eui-no-std"}
