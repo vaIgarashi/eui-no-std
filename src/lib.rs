@@ -57,6 +57,22 @@ impl From<u64> for Eui64 {
     }
 }
 
+impl From<Eui48> for Eui64 {
+    fn from(eui48: Eui48) -> Self {
+        let mut data = [0u8; 8];
+
+        for i in 0..6 {
+            if i < 3 {
+                data[i] = eui48.0[i]
+            } else {
+                data[i + 2] = eui48.0[i]
+            }
+        }
+
+        Eui64(data)
+    }
+}
+
 impl Display for Eui48 {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         write!(f, "{}", self.to_string())
@@ -79,6 +95,14 @@ fn test_eui48_to_string() {
 #[test]
 fn test_eui64_to_string() {
     let eui64 = Eui64::from(5583992946972634863);
+
+    assert_eq!(eui64.to_string(), "4d7e540000972eef")
+}
+
+#[test]
+fn test_eui48_to_eui64() {
+    let eui48 = Eui48::from(85204980412143);
+    let eui64 = Eui64::from(eui48);
 
     assert_eq!(eui64.to_string(), "4d7e540000972eef")
 }
