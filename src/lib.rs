@@ -6,7 +6,9 @@ use heapless::{String, Vec};
 
 const HEX_CHARS: &[u8] = b"0123456789abcdef";
 
+#[derive(Eq, PartialEq, Copy, Clone, Debug)]
 pub struct Eui48([u8; 6]);
+#[derive(Eq, PartialEq, Copy, Clone, Debug)]
 pub struct Eui64([u8; 8]);
 
 macro_rules! to_hex_string {
