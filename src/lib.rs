@@ -1,5 +1,8 @@
 #![no_std]
 
+#[cfg(feature = "serde")]
+mod serde;
+
 use core::fmt::{Display, Error, Formatter};
 use heapless::consts::*;
 use heapless::{String, Vec};
