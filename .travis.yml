@@ -1,5 +1,8 @@
 language: rust
 sudo: required
+script:
+  - cargo build --verbose --features serde
+  - cargo test --verbose --features serde
 rust:
   - stable
   - beta
