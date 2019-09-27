@@ -1,7 +1,9 @@
 #![no_std]
 
 #[cfg(feature = "serde")]
-mod serde;
+mod de;
+#[cfg(feature = "serde")]
+mod ser;
 
 use core::fmt::{Display, Error, Formatter};
 use heapless::consts::*;
