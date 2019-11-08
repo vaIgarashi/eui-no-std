@@ -78,6 +78,25 @@ impl From<Eui48> for Eui64 {
     }
 }
 
+impl From<Eui48> for u64 {
+    fn from(eui48: Eui48) -> Self {
+        let data = eui48.0;
+
+        ((data[0] as u64) << 40)
+            + ((data[1] as u64) << 32)
+            + ((data[2] as u64) << 24)
+            + ((data[3] as u64) << 16)
+            + ((data[4] as u64) << 8)
+            + ((data[5] as u64) << 0)
+    }
+}
+
+impl From<Eui64> for u64 {
+    fn from(eui64: Eui64) -> Self {
+        u64::from_be_bytes(eui64.0)
+    }
+}
+
 impl Display for Eui48 {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         write!(f, "{}", self.to_string())
@@ -110,4 +129,16 @@ fn test_eui48_to_eui64() {
     let eui64 = Eui64::from(eui48);
 
     assert_eq!(eui64.to_string(), "4d7e540000972eef")
+}
+
+#[test]
+fn test_u64_from_eui48() {
+    let eui48 = Eui48::from(85204980412143);
+    assert_eq!(u64::from(eui48), 85204980412143);
+}
+
+#[test]
+fn test_u64_from_eui64() {
+    let eui64 = Eui64::from(5583992946972634863);
+    assert_eq!(u64::from(eui64), 5583992946972634863);
 }
