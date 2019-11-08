@@ -10,6 +10,9 @@ repository = "https://github.com/vagola/eui-no-std"
 keywords = ["eui", "eui-48", "eui-64", "no-std"]
 readme = "README.md"
 
+[lib]
+name = "eui"
+
 [dependencies]
 heapless = "0.5"
 serde = { version = "1.0", default-features = false, optional = true }
