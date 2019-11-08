@@ -19,7 +19,7 @@ Or if u interested in serde enable optional feature:
 
 ```toml
 [dependencies]
-eui-no-std  = { version = "0.2", default-features = false, features = ["serde"] }
+eui-no-std = { version = "0.2", default-features = false, features = ["serde"] }
 ```
 
 ## Example
