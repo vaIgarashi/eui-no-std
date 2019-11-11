@@ -164,7 +164,7 @@ fn test_hash_eui48() {
     let eui48 = Eui48::from(85204980412143);
 
     let mut fnv_index_map: FnvIndexMap<Eui48, u8, U1> = FnvIndexMap::new();
-    fnv_index_map.insert(eui48, 1);
+    fnv_index_map.insert(eui48, 1).unwrap();
 
     assert_eq!(1, *fnv_index_map.get(&eui48).unwrap())
 }
@@ -176,7 +176,7 @@ fn test_hash_eui64() {
     let eui64 = Eui64::from(5583992946972634863);
 
     let mut fnv_index_map: FnvIndexMap<Eui64, u8, U1> = FnvIndexMap::new();
-    fnv_index_map.insert(eui64, 1);
+    fnv_index_map.insert(eui64, 1).unwrap();
 
     assert_eq!(1, *fnv_index_map.get(&eui64).unwrap())
 }
