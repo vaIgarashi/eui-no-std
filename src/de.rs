@@ -84,7 +84,7 @@ where
                 }
             }
             None if c == ':' => {
-                // We assume that string may content separator after every second character.
+                // String may contain separator after every second character.
                 if i == 0 || i == v.len() || (i + 1) % 3 != 0 {
                     return Err(Error::custom(
                         "Separator must be placed after every second character",
