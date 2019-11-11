@@ -27,7 +27,7 @@ impl<'de> Visitor<'de> for Eui48Visitor {
 
         let mut result = [0; 6];
 
-        for (i, c) in v.chars().enumerate() {
+        for (i, c) in v.to_lowercase().chars().enumerate() {
             if let Some(value) = HEX_CHARS.iter().position(|&e| e == (c as u8)) {
                 let result_index = i / 2;
 
@@ -65,7 +65,7 @@ impl<'de> Visitor<'de> for Eui64Visitor {
 
         let mut result = [0; 8];
 
-        for (i, c) in v.chars().enumerate() {
+        for (i, c) in v.to_lowercase().chars().enumerate() {
             if let Some(value) = HEX_CHARS.iter().position(|&e| e == (c as u8)) {
                 let result_index = i / 2;
 
@@ -107,7 +107,7 @@ mod tests {
     use serde_test::{assert_de_tokens, assert_de_tokens_error, Token};
 
     #[test]
-    fn test_eui48_deserialize() {
+    fn test_eui48_deserialize_lowercase() {
         assert_de_tokens(
             &Eui48::from(85204980412143),
             &[Token::String("4d7e54972eef")],
@@ -115,10 +115,26 @@ mod tests {
     }
 
     #[test]
-    fn test_eui64_deserialize() {
+    fn test_eui48_deserialize_uppercase() {
+        assert_de_tokens(
+            &Eui48::from(85204980412143),
+            &[Token::String("4D7E54972EEF")],
+        );
+    }
+
+    #[test]
+    fn test_eui64_deserialize_lowercase() {
         assert_de_tokens(
             &Eui64::from(5583992946972634863),
             &[Token::String("4d7e540000972eef")],
+        );
+    }
+
+    #[test]
+    fn test_eui64_deserialize_uppercase() {
+        assert_de_tokens(
+            &Eui64::from(5583992946972634863),
+            &[Token::String("4D7E540000972EEF")],
         );
     }
 
