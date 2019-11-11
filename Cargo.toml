@@ -16,6 +16,8 @@ name = "eui"
 [dependencies]
 heapless = "0.5"
 serde = { version = "1.0", default-features = false, optional = true }
+hash32 = "0.1"
+hash32-derive = "0.1"
 
 [dev-dependencies]
 serde_test = "1.0"

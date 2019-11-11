@@ -25,9 +25,9 @@ use heapless::{String, Vec};
 
 const HEX_CHARS: &[u8] = b"0123456789abcdef";
 
-#[derive(Eq, PartialEq, Copy, Clone, Debug)]
+#[derive(Eq, PartialEq, Copy, Clone, Debug, hash32_derive::Hash32)]
 pub struct Eui48([u8; 6]);
-#[derive(Eq, PartialEq, Copy, Clone, Debug)]
+#[derive(Eq, PartialEq, Copy, Clone, Debug, hash32_derive::Hash32)]
 pub struct Eui64([u8; 8]);
 
 macro_rules! to_hex_string {
@@ -155,4 +155,28 @@ fn test_u64_from_eui48() {
 fn test_u64_from_eui64() {
     let eui64 = Eui64::from(5583992946972634863);
     assert_eq!(u64::from(eui64), 5583992946972634863);
+}
+
+#[test]
+fn test_hash_eui48() {
+    use heapless::FnvIndexMap;
+
+    let eui48 = Eui48::from(85204980412143);
+
+    let mut fnv_index_map: FnvIndexMap<Eui48, u8, U1> = FnvIndexMap::new();
+    fnv_index_map.insert(eui48, 1);
+
+    assert_eq!(1, *fnv_index_map.get(&eui48).unwrap())
+}
+
+#[test]
+fn test_hash_eui64() {
+    use heapless::FnvIndexMap;
+
+    let eui64 = Eui64::from(5583992946972634863);
+
+    let mut fnv_index_map: FnvIndexMap<Eui64, u8, U1> = FnvIndexMap::new();
+    fnv_index_map.insert(eui64, 1);
+
+    assert_eq!(1, *fnv_index_map.get(&eui64).unwrap())
 }
