@@ -1,6 +1,6 @@
 [package]
 name = "eui-no-std"
-version = "0.2.2"
+version = "0.2.3"
 authors = ["vagola <vladislavs.golubs@yandex.ru>"]
 edition = "2018"
 description = "EUI-48 and EUI-64 no-std implementation."
