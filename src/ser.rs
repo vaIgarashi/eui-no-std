@@ -1,5 +1,4 @@
 use crate::{Eui48, Eui64};
-use core::fmt;
 use serde::{Serialize, Serializer};
 
 impl Serialize for Eui48 {
