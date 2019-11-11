@@ -1,7 +1,7 @@
 use crate::{Eui48, Eui64, HEX_CHARS};
 use core::fmt;
-use serde::de::Visitor;
 use serde::de::{Error, Unexpected};
+use serde::de::{Expected, Visitor};
 use serde::{Deserialize, Deserializer};
 
 struct Eui48Visitor;
@@ -13,7 +13,8 @@ impl<'de> Visitor<'de> for Eui48Visitor {
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         write!(
             formatter,
-            "a 12 byte string with only hexadecimal characters"
+            "12 byte string with only hexadecimal characters or \
+             17 byte string with hexadecimal characters and separator after every second character"
         )
     }
 
@@ -21,25 +22,12 @@ impl<'de> Visitor<'de> for Eui48Visitor {
     where
         E: Error,
     {
-        if v.len() != 12 {
+        if v.len() != 12 && v.len() != 17 {
             return Err(Error::invalid_length(v.len(), &self));
         }
 
         let mut result = [0; 6];
-
-        for (i, c) in v.to_lowercase().chars().enumerate() {
-            if let Some(value) = HEX_CHARS.iter().position(|&e| e == (c as u8)) {
-                let result_index = i / 2;
-
-                if i % 2 == 0 {
-                    result[result_index] = (value as u8) << 4 & 0xF0
-                } else {
-                    result[result_index] |= value as u8 & 0xF
-                }
-            } else {
-                return Err(Error::invalid_value(Unexpected::Char(c), &self));
-            }
-        }
+        to_hexadecimal(v, &mut result[..], &self)?;
 
         Ok(Eui48(result))
     }
@@ -51,7 +39,8 @@ impl<'de> Visitor<'de> for Eui64Visitor {
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         write!(
             formatter,
-            "a 16 byte string with only hexadecimal characters"
+            "16 byte string with only hexadecimal characters or \
+             23 byte string with hexadecimal characters and separator after every second character"
         )
     }
 
@@ -59,28 +48,56 @@ impl<'de> Visitor<'de> for Eui64Visitor {
     where
         E: Error,
     {
-        if v.len() != 16 {
+        if v.len() != 16 && v.len() != 23 {
             return Err(Error::invalid_length(v.len(), &self));
         }
 
         let mut result = [0; 8];
-
-        for (i, c) in v.to_lowercase().chars().enumerate() {
-            if let Some(value) = HEX_CHARS.iter().position(|&e| e == (c as u8)) {
-                let result_index = i / 2;
-
-                if i % 2 == 0 {
-                    result[result_index] = (value as u8) << 4 & 0xF0
-                } else {
-                    result[result_index] |= value as u8 & 0xF
-                }
-            } else {
-                return Err(Error::invalid_value(Unexpected::Char(c), &self));
-            }
-        }
+        to_hexadecimal(v, &mut result[..], &self)?;
 
         Ok(Eui64(result))
     }
+}
+
+fn to_hexadecimal<E>(v: &str, result: &mut [u8], exp: &dyn Expected) -> Result<(), E>
+where
+    E: Error,
+{
+    let mut separators = 0;
+
+    for (i, c) in v.to_lowercase().chars().enumerate() {
+        let hex_char_index = HEX_CHARS.iter().position(|&e| e == (c as u8));
+
+        match hex_char_index {
+            Some(value) => {
+                let current_pos = i - separators;
+                let index = current_pos / 2;
+
+                if index > result.len() - 1 {
+                    return Err(Error::invalid_length(v.len() - separators, exp));
+                }
+
+                if current_pos % 2 == 0 {
+                    result[index] = (value as u8) << 4 & 0xF0
+                } else {
+                    result[index] |= value as u8 & 0xF
+                }
+            }
+            None if c == ':' => {
+                // We assume that string may content separator after every second character.
+                if i == 0 || i == v.len() || (i + 1) % 3 != 0 {
+                    return Err(Error::custom(
+                        "Separator must be placed after every second character",
+                    ));
+                }
+
+                separators += 1;
+            }
+            None => return Err(Error::invalid_value(Unexpected::Char(c), exp)),
+        }
+    }
+
+    Ok(())
 }
 
 impl<'de> Deserialize<'de> for Eui48 {
@@ -142,12 +159,20 @@ mod tests {
     fn test_eui48_deserialize_invalid_length() {
         assert_de_tokens_error::<Eui48>(
             &[Token::Str("4d7e54972e")],
-            "invalid length 10, expected a 12 byte string with only hexadecimal characters",
+            "invalid length 10, expected 12 byte string with only hexadecimal characters or \
+             17 byte string with hexadecimal characters and separator after every second character",
         );
 
         assert_de_tokens_error::<Eui48>(
             &[Token::Str("4d7e54972eefef4d")],
-            "invalid length 16, expected a 12 byte string with only hexadecimal characters",
+            "invalid length 16, expected 12 byte string with only hexadecimal characters or \
+             17 byte string with hexadecimal characters and separator after every second character",
+        );
+
+        assert_de_tokens_error::<Eui48>(
+            &[Token::Str("4d7e54972eefef4da")],
+            "invalid length 17, expected 12 byte string with only hexadecimal characters or \
+             17 byte string with hexadecimal characters and separator after every second character",
         );
     }
 
@@ -155,12 +180,14 @@ mod tests {
     fn test_eui64_deserialize_invalid_length() {
         assert_de_tokens_error::<Eui64>(
             &[Token::Str("4d7e54972eaa")],
-            "invalid length 12, expected a 16 byte string with only hexadecimal characters",
+            "invalid length 12, expected 16 byte string with only hexadecimal characters or \
+             23 byte string with hexadecimal characters and separator after every second character",
         );
 
         assert_de_tokens_error::<Eui64>(
             &[Token::Str("4d7e54972eefef4ddd")],
-            "invalid length 18, expected a 16 byte string with only hexadecimal characters",
+            "invalid length 18, expected 16 byte string with only hexadecimal characters or \
+             23 byte string with hexadecimal characters and separator after every second character",
         );
     }
 
@@ -168,7 +195,8 @@ mod tests {
     fn test_eui48_deserialize_invalid_character() {
         assert_de_tokens_error::<Eui48>(
             &[Token::Str("ad7e54972esa")],
-            "invalid value: character `s`, expected a 12 byte string with only hexadecimal characters",
+            "invalid value: character `s`, expected 12 byte string with only hexadecimal characters or \
+            17 byte string with hexadecimal characters and separator after every second character",
         );
     }
 
@@ -176,7 +204,60 @@ mod tests {
     fn test_eui64_deserialize_invalid_character() {
         assert_de_tokens_error::<Eui64>(
             &[Token::Str("ad7e54972ea721sa")],
-            "invalid value: character `s`, expected a 16 byte string with only hexadecimal characters",
+            "invalid value: character `s`, expected 16 byte string with only hexadecimal characters or \
+             23 byte string with hexadecimal characters and separator after every second character",
+        );
+    }
+
+    #[test]
+    fn test_eui48_deserialize_with_separator() {
+        assert_de_tokens(
+            &Eui48::from(85204980412143),
+            &[Token::String("4d:7e:54:97:2e:ef")],
+        );
+    }
+
+    #[test]
+    fn test_eui64_deserialize_with_separator() {
+        assert_de_tokens(
+            &Eui64::from(5583992946972634863),
+            &[Token::String("4d:7e:54:00:00:97:2e:ef")],
+        );
+    }
+
+    #[test]
+    fn test_eui48_deserialize_invalid_separator_position() {
+        assert_de_tokens_error::<Eui48>(
+            &[Token::Str(":4d7e:54:97:2e:ef")],
+            "Separator must be placed after every second character",
+        );
+
+        assert_de_tokens_error::<Eui48>(
+            &[Token::Str("4d:7e:54:97:2eef:")],
+            "Separator must be placed after every second character",
+        );
+
+        assert_de_tokens_error::<Eui48>(
+            &[Token::Str("4d::7e54:97:2e:ef")],
+            "Separator must be placed after every second character",
+        );
+    }
+
+    #[test]
+    fn test_eui64_deserialize_invalid_separator_position() {
+        assert_de_tokens_error::<Eui64>(
+            &[Token::Str(":4d7e:54:00:00:97:2e:ef")],
+            "Separator must be placed after every second character",
+        );
+
+        assert_de_tokens_error::<Eui64>(
+            &[Token::Str("4d:7e:54:00:00:97:2eef:")],
+            "Separator must be placed after every second character",
+        );
+
+        assert_de_tokens_error::<Eui64>(
+            &[Token::Str("4d::7e54:00:00:97:2e:ef")],
+            "Separator must be placed after every second character",
         );
     }
 }
