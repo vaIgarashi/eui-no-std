@@ -15,7 +15,7 @@ Add this to your `Cargo.toml`:
 eui-no-std = "0.2"
 ```
 
-Or if u interested in serde enable optional feature:
+Serde support can be enabled using features:
 
 ```toml
 [dependencies]
