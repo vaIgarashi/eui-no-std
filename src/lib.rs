@@ -87,12 +87,12 @@ impl From<Eui48> for Eui64 {
     fn from(eui48: Eui48) -> Self {
         let mut data = [0u8; 8];
 
-        for i in 0..6 {
-            if i < 3 {
-                data[i] = eui48.0[i]
-            } else {
-                data[i + 2] = eui48.0[i]
-            }
+        for i in 0..3 {
+            data[i] = eui48.0[i]
+        }
+
+        for i in 5..8 {
+            data[i] = eui48.0[i - 2]
         }
 
         Eui64(data)
