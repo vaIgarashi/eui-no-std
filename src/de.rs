@@ -63,6 +63,7 @@ fn to_hexadecimal<E>(v: &str, result: &mut [u8], exp: &dyn Expected) -> Result<(
 where
     E: Error,
 {
+    let mut separator_type = None;
     let mut separators = 0;
 
     for (i, c) in v.to_lowercase().chars().enumerate() {
@@ -83,12 +84,21 @@ where
                     result[index] |= value as u8 & 0xF
                 }
             }
-            None if c == ':' => {
+            None if c == ':' || c == '-' => {
                 // String may contain separator after every second character.
                 if i == 0 || i == v.len() || (i + 1) % 3 != 0 {
                     return Err(Error::custom(
                         "Separator must be placed after every second character",
                     ));
+                }
+
+                match separator_type {
+                    Some(t) => {
+                        if t != c {
+                            return Err(Error::custom("Only one type of separator should be used"));
+                        }
+                    }
+                    None => separator_type = Some(c),
                 }
 
                 separators += 1;
@@ -215,6 +225,11 @@ mod tests {
             &Eui48::from(85204980412143),
             &[Token::String("4d:7e:54:97:2e:ef")],
         );
+
+        assert_de_tokens(
+            &Eui48::from(85204980412143),
+            &[Token::String("4d-7e-54-97-2e-ef")],
+        );
     }
 
     #[test]
@@ -222,6 +237,11 @@ mod tests {
         assert_de_tokens(
             &Eui64::from(5583992946972634863),
             &[Token::String("4d:7e:54:00:00:97:2e:ef")],
+        );
+
+        assert_de_tokens(
+            &Eui64::from(5583992946972634863),
+            &[Token::String("4d-7e-54-00-00-97-2e-ef")],
         );
     }
 
@@ -258,6 +278,14 @@ mod tests {
         assert_de_tokens_error::<Eui64>(
             &[Token::Str("4d::7e54:00:00:97:2e:ef")],
             "Separator must be placed after every second character",
+        );
+    }
+
+    #[test]
+    fn test_eui48_deserialize_different_separators() {
+        assert_de_tokens_error::<Eui64>(
+            &[Token::Str("4d:7e-54:00:00:97:2e-ef")],
+            "Only one type of separator should be used",
         );
     }
 }
