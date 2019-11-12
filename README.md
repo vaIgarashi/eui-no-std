@@ -12,14 +12,14 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-eui-no-std = "0.2"
+eui-no-std = "0.3"
 ```
 
 Serde support can be enabled using features:
 
 ```toml
 [dependencies]
-eui-no-std = { version = "0.2", default-features = false, features = ["serde"] }
+eui-no-std = { version = "0.3", default-features = false, features = ["serde"] }
 ```
 
 ## Example
