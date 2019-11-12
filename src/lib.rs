@@ -389,6 +389,24 @@ fn test_eui64_try_from_string() {
 }
 
 #[test]
+fn test_eui48_try_from_string_with_separator() {
+    let eui48_1 = Eui48::try_from("4D-7E-54-97-2E-EF").unwrap();
+    let eui48_2 = Eui48::try_from("4D:7E:54:97:2E:EF").unwrap();
+
+    assert_eq!(u64::from(eui48_1), 85204980412143);
+    assert_eq!(u64::from(eui48_2), 85204980412143);
+}
+
+#[test]
+fn test_eui64_try_from_string_with_separator() {
+    let eui64_1 = Eui64::try_from("4D-7E-54-00-00-97-2E-EF").unwrap();
+    let eui64_2 = Eui64::try_from("4D:7E:54:00:00:97:2E:EF").unwrap();
+
+    assert_eq!(u64::from(eui64_1), 5583992946972634863);
+    assert_eq!(u64::from(eui64_2), 5583992946972634863);
+}
+
+#[test]
 fn test_eui48_try_from_invalid_length() {
     assert_eq!(
         Eui48::try_from("").err().unwrap(),
