@@ -19,7 +19,7 @@ mod de;
 #[cfg(feature = "serde")]
 mod ser;
 
-use core::fmt::{Display, Error, Formatter};
+use core::fmt::{Display, Error, Formatter, LowerHex, UpperHex};
 use heapless::consts::*;
 use heapless::{String, Vec};
 
@@ -31,14 +31,12 @@ pub struct Eui48([u8; 6]);
 pub struct Eui64([u8; 8]);
 
 macro_rules! to_hex_string {
-    ($eui: expr, $size: ty, $separator: expr) => {{
+    ($eui: expr, $size: ty) => {{
         let mut vec = Vec::<u8, $size>::new();
 
         for (i, &byte) in $eui.0.iter().enumerate() {
             if i != 0 {
-                if let Some(s) = $separator {
-                    vec.push(s as u8).expect("Vector is not long enough");
-                }
+                vec.push('-' as u8).expect("Vector is not long enough");
             }
 
             vec.push(UPPERCASE_HEX_CHARS[(byte >> 4) as usize])
@@ -55,14 +53,14 @@ macro_rules! to_hex_string {
 impl Eui48 {
     #[inline]
     pub fn to_string(&self) -> String<U17> {
-        to_hex_string!(self, U17, Some('-'))
+        to_hex_string!(self, U17)
     }
 }
 
 impl Eui64 {
     #[inline]
     pub fn to_string(&self) -> String<U23> {
-        to_hex_string!(self, U23, Some('-'))
+        to_hex_string!(self, U23)
     }
 }
 
@@ -132,6 +130,30 @@ impl Display for Eui64 {
     }
 }
 
+impl UpperHex for Eui48 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        write!(f, "{:X}", u64::from(*self))
+    }
+}
+
+impl LowerHex for Eui48 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        write!(f, "{:x}", u64::from(*self))
+    }
+}
+
+impl UpperHex for Eui64 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        write!(f, "{:X}", u64::from(*self))
+    }
+}
+
+impl LowerHex for Eui64 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        write!(f, "{:x}", u64::from(*self))
+    }
+}
+
 #[test]
 fn test_eui48_to_string() {
     let eui48 = Eui48::from(85204980412143);
@@ -188,4 +210,64 @@ fn test_hash_eui64() {
     fnv_index_map.insert(eui64, 1).unwrap();
 
     assert_eq!(1, *fnv_index_map.get(&eui64).unwrap())
+}
+
+#[test]
+fn test_display_eui48() {
+    extern crate std;
+    use std::format;
+
+    let eui48 = Eui48::from(85204980412143);
+
+    assert_eq!(format!("{}", eui48), "4D-7E-54-97-2E-EF");
+}
+
+#[test]
+fn test_display_eui64() {
+    extern crate std;
+    use std::format;
+
+    let eui64 = Eui64::from(5583992946972634863);
+
+    assert_eq!(format!("{}", eui64), "4D-7E-54-00-00-97-2E-EF");
+}
+
+#[test]
+fn test_format_upper_hex_eui48() {
+    extern crate std;
+    use std::format;
+
+    let eui48 = Eui48::from(85204980412143);
+
+    assert_eq!(format!("{:X}", eui48), "4D7E54972EEF");
+}
+
+#[test]
+fn test_format_upper_hex_eui64() {
+    extern crate std;
+    use std::format;
+
+    let eui64 = Eui64::from(5583992946972634863);
+
+    assert_eq!(format!("{:X}", eui64), "4D7E540000972EEF");
+}
+
+#[test]
+fn test_format_lower_hex_eui48() {
+    extern crate std;
+    use std::format;
+
+    let eui48 = Eui48::from(85204980412143);
+
+    assert_eq!(format!("{:x}", eui48), "4d7e54972eef");
+}
+
+#[test]
+fn test_format_lower_hex_eui64() {
+    extern crate std;
+    use std::format;
+
+    let eui64 = Eui64::from(5583992946972634863);
+
+    assert_eq!(format!("{:x}", eui64), "4d7e540000972eef");
 }
