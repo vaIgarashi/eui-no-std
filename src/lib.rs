@@ -55,7 +55,7 @@ macro_rules! to_hex_string {
 impl Eui48 {
     #[inline]
     pub fn to_string(&self) -> String<U17> {
-        to_hex_string!(self, U18, Some('-'))
+        to_hex_string!(self, U17, Some('-'))
     }
 }
 
