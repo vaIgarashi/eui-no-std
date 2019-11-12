@@ -9,8 +9,8 @@
 //! let eui48 = Eui48::from(85204980412143);
 //! let eui64 = Eui64::from(eui48);
 //!     
-//! assert_eq!(eui48.to_string(), "4d7e54972eef");
-//! assert_eq!(eui64.to_string(), "4d7e540000972eef");
+//! assert_eq!(eui48.to_string(), "4D-7E-54-97-2E-EF");
+//! assert_eq!(eui64.to_string(), "4D-7E-54-00-00-97-2E-EF");
 //! ```
 #![no_std]
 
@@ -23,7 +23,7 @@ use core::fmt::{Display, Error, Formatter};
 use heapless::consts::*;
 use heapless::{String, Vec};
 
-const HEX_CHARS: &[u8] = b"0123456789abcdef";
+const UPPERCASE_HEX_CHARS: &[u8] = b"0123456789ABCDEF";
 
 #[derive(Eq, PartialEq, Copy, Clone, Debug, hash32_derive::Hash32)]
 pub struct Eui48([u8; 6]);
@@ -31,12 +31,21 @@ pub struct Eui48([u8; 6]);
 pub struct Eui64([u8; 8]);
 
 macro_rules! to_hex_string {
-    ($eui: expr, $size: ty) => {{
+    ($eui: expr, $size: ty, $separator: expr) => {{
         let mut vec = Vec::<u8, $size>::new();
 
-        for &byte in $eui.0.iter() {
-            vec.push(HEX_CHARS[(byte >> 4) as usize]).unwrap();
-            vec.push(HEX_CHARS[(byte & 0xf) as usize]).unwrap();
+        for (i, &byte) in $eui.0.iter().enumerate() {
+            if i != 0 {
+                if let Some(s) = $separator {
+                    vec.push(s as u8).expect("Vector is not long enough");
+                }
+            }
+
+            vec.push(UPPERCASE_HEX_CHARS[(byte >> 4) as usize])
+                .expect("Vector is not long enough");
+
+            vec.push(UPPERCASE_HEX_CHARS[(byte & 0xf) as usize])
+                .expect("Vector is not long enough");
         }
 
         unsafe { String::from_utf8_unchecked(vec) }
@@ -45,15 +54,15 @@ macro_rules! to_hex_string {
 
 impl Eui48 {
     #[inline]
-    pub fn to_string(&self) -> String<U12> {
-        to_hex_string!(self, U12)
+    pub fn to_string(&self) -> String<U17> {
+        to_hex_string!(self, U18, Some('-'))
     }
 }
 
 impl Eui64 {
     #[inline]
-    pub fn to_string(&self) -> String<U16> {
-        to_hex_string!(self, U16)
+    pub fn to_string(&self) -> String<U23> {
+        to_hex_string!(self, U23, Some('-'))
     }
 }
 
@@ -127,14 +136,14 @@ impl Display for Eui64 {
 fn test_eui48_to_string() {
     let eui48 = Eui48::from(85204980412143);
 
-    assert_eq!(eui48.to_string(), "4d7e54972eef")
+    assert_eq!(eui48.to_string(), "4D-7E-54-97-2E-EF")
 }
 
 #[test]
 fn test_eui64_to_string() {
     let eui64 = Eui64::from(5583992946972634863);
 
-    assert_eq!(eui64.to_string(), "4d7e540000972eef")
+    assert_eq!(eui64.to_string(), "4D-7E-54-00-00-97-2E-EF")
 }
 
 #[test]
@@ -142,7 +151,7 @@ fn test_eui48_to_eui64() {
     let eui48 = Eui48::from(85204980412143);
     let eui64 = Eui64::from(eui48);
 
-    assert_eq!(eui64.to_string(), "4d7e540000972eef")
+    assert_eq!(eui64.to_string(), "4D-7E-54-00-00-97-2E-EF")
 }
 
 #[test]

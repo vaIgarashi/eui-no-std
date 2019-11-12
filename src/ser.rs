@@ -21,12 +21,12 @@ mod tests {
     #[test]
     fn test_eui48_serialize() {
         let eui48 = Eui48::from(85204980412143);
-        assert_ser_tokens(&eui48, &[Token::String("4d7e54972eef")]);
+        assert_ser_tokens(&eui48, &[Token::String("4D-7E-54-97-2E-EF")]);
     }
 
     #[test]
     fn test_eui64_serialize() {
         let eui64 = Eui64::from(5583992946972634863);
-        assert_ser_tokens(&eui64, &[Token::String("4d7e540000972eef")]);
+        assert_ser_tokens(&eui64, &[Token::String("4D-7E-54-00-00-97-2E-EF")]);
     }
 }

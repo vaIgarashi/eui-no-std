@@ -1,4 +1,4 @@
-use crate::{Eui48, Eui64, HEX_CHARS};
+use crate::{Eui48, Eui64, UPPERCASE_HEX_CHARS};
 use core::fmt;
 use serde::de::{Error, Unexpected};
 use serde::de::{Expected, Visitor};
@@ -66,8 +66,8 @@ where
     let mut separator_type = None;
     let mut separators = 0;
 
-    for (i, c) in v.to_lowercase().chars().enumerate() {
-        let hex_char_index = HEX_CHARS.iter().position(|&e| e == (c as u8));
+    for (i, c) in v.to_uppercase().chars().enumerate() {
+        let hex_char_index = UPPERCASE_HEX_CHARS.iter().position(|&e| e == (c as u8));
 
         match hex_char_index {
             Some(value) => {
@@ -103,7 +103,15 @@ where
 
                 separators += 1;
             }
-            None => return Err(Error::invalid_value(Unexpected::Char(c), exp)),
+            None => {
+                // Displaying char with original case sensitivity.
+                let original_char_sensitivity = v.as_bytes()[i] as char;
+
+                return Err(Error::invalid_value(
+                    Unexpected::Char(original_char_sensitivity),
+                    exp,
+                ));
+            }
         }
     }
 
@@ -220,7 +228,7 @@ mod tests {
     }
 
     #[test]
-    fn test_eui48_deserialize_with_separator() {
+    fn test_eui48_deserialize_with_separator_lowercase() {
         assert_de_tokens(
             &Eui48::from(85204980412143),
             &[Token::String("4d:7e:54:97:2e:ef")],
@@ -233,7 +241,20 @@ mod tests {
     }
 
     #[test]
-    fn test_eui64_deserialize_with_separator() {
+    fn test_eui48_deserialize_with_separator_uppercase() {
+        assert_de_tokens(
+            &Eui48::from(85204980412143),
+            &[Token::String("4D:7E:54:97:2E:EF")],
+        );
+
+        assert_de_tokens(
+            &Eui48::from(85204980412143),
+            &[Token::String("4D-7E-54-97-2E-EF")],
+        );
+    }
+
+    #[test]
+    fn test_eui64_deserialize_with_separator_lowercase() {
         assert_de_tokens(
             &Eui64::from(5583992946972634863),
             &[Token::String("4d:7e:54:00:00:97:2e:ef")],
@@ -242,6 +263,19 @@ mod tests {
         assert_de_tokens(
             &Eui64::from(5583992946972634863),
             &[Token::String("4d-7e-54-00-00-97-2e-ef")],
+        );
+    }
+
+    #[test]
+    fn test_eui64_deserialize_with_separator_uppercase() {
+        assert_de_tokens(
+            &Eui64::from(5583992946972634863),
+            &[Token::String("4D:7E:54:00:00:97:2E:EF")],
+        );
+
+        assert_de_tokens(
+            &Eui64::from(5583992946972634863),
+            &[Token::String("4D-7E-54-00-00-97-2E-EF")],
         );
     }
 
