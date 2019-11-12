@@ -84,19 +84,16 @@ impl From<u64> for Eui64 {
     }
 }
 
-/// Possible errors while decoding string to hexadecimal.
+/// Possible errors while converting string to eui.
 #[derive(Debug, PartialEq, Eq)]
-pub enum StringToHexadecimalError {
+pub enum StringToEuiError {
     InvalidLength { length: usize },
     InvalidChar { char: char },
     InvalidSeparatorPlace,
     OnlyOneSeparatorTypeExpected,
 }
 
-pub(crate) fn string_to_hexadecimal(
-    input: &str,
-    result: &mut [u8],
-) -> Result<(), StringToHexadecimalError> {
+pub(crate) fn string_to_eui(input: &str, result: &mut [u8]) -> Result<(), StringToEuiError> {
     let mut separator_type = None;
     let mut separators = 0;
 
@@ -109,7 +106,7 @@ pub(crate) fn string_to_hexadecimal(
                 let index = current_pos / 2;
 
                 if index > result.len() - 1 {
-                    return Err(StringToHexadecimalError::InvalidLength {
+                    return Err(StringToEuiError::InvalidLength {
                         length: input.len() - separators,
                     });
                 }
@@ -123,13 +120,13 @@ pub(crate) fn string_to_hexadecimal(
             None if c == ':' || c == '-' => {
                 // String may contain separator after every second character.
                 if i == 0 || i == input.len() || (i + 1) % 3 != 0 {
-                    return Err(StringToHexadecimalError::InvalidSeparatorPlace);
+                    return Err(StringToEuiError::InvalidSeparatorPlace);
                 }
 
                 match separator_type {
                     Some(t) => {
                         if t != c {
-                            return Err(StringToHexadecimalError::OnlyOneSeparatorTypeExpected);
+                            return Err(StringToEuiError::OnlyOneSeparatorTypeExpected);
                         }
                     }
                     None => separator_type = Some(c),
@@ -141,7 +138,7 @@ pub(crate) fn string_to_hexadecimal(
                 // Displaying char with original case sensitivity.
                 let original_char_sensitivity = input.as_bytes()[i] as char;
 
-                return Err(StringToHexadecimalError::InvalidChar {
+                return Err(StringToEuiError::InvalidChar {
                     char: original_char_sensitivity,
                 });
             }
@@ -152,34 +149,34 @@ pub(crate) fn string_to_hexadecimal(
 }
 
 impl TryFrom<&str> for Eui48 {
-    type Error = StringToHexadecimalError;
+    type Error = StringToEuiError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         if value.len() != 12 && value.len() != 17 {
-            return Err(StringToHexadecimalError::InvalidLength {
+            return Err(StringToEuiError::InvalidLength {
                 length: value.len(),
             });
         }
 
         let mut result = [0; 6];
-        string_to_hexadecimal(value, &mut result[..])?;
+        string_to_eui(value, &mut result[..])?;
 
         Ok(Eui48(result))
     }
 }
 
 impl TryFrom<&str> for Eui64 {
-    type Error = StringToHexadecimalError;
+    type Error = StringToEuiError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         if value.len() != 16 && value.len() != 23 {
-            return Err(StringToHexadecimalError::InvalidLength {
+            return Err(StringToEuiError::InvalidLength {
                 length: value.len(),
             });
         }
 
         let mut result = [0; 8];
-        string_to_hexadecimal(value, &mut result[..])?;
+        string_to_eui(value, &mut result[..])?;
 
         Ok(Eui64(result))
     }
@@ -410,22 +407,22 @@ fn test_eui64_try_from_string_with_separator() {
 fn test_eui48_try_from_invalid_length() {
     assert_eq!(
         Eui48::try_from("").err().unwrap(),
-        StringToHexadecimalError::InvalidLength { length: 0 }
+        StringToEuiError::InvalidLength { length: 0 }
     );
 
     assert_eq!(
         Eui48::try_from("4d7e54972e").err().unwrap(),
-        StringToHexadecimalError::InvalidLength { length: 10 }
+        StringToEuiError::InvalidLength { length: 10 }
     );
 
     assert_eq!(
         Eui48::try_from("4d7e54972eefef4d").err().unwrap(),
-        StringToHexadecimalError::InvalidLength { length: 16 }
+        StringToEuiError::InvalidLength { length: 16 }
     );
 
     assert_eq!(
         Eui48::try_from("4d7e54972eefef4da").err().unwrap(),
-        StringToHexadecimalError::InvalidLength { length: 17 }
+        StringToEuiError::InvalidLength { length: 17 }
     );
 }
 
@@ -433,17 +430,17 @@ fn test_eui48_try_from_invalid_length() {
 fn test_eui64_try_from_invalid_length() {
     assert_eq!(
         Eui64::try_from("").err().unwrap(),
-        StringToHexadecimalError::InvalidLength { length: 0 }
+        StringToEuiError::InvalidLength { length: 0 }
     );
 
     assert_eq!(
         Eui64::try_from("4d7e54972eaa").err().unwrap(),
-        StringToHexadecimalError::InvalidLength { length: 12 }
+        StringToEuiError::InvalidLength { length: 12 }
     );
 
     assert_eq!(
         Eui64::try_from("4d7e54972eefef4ddd").err().unwrap(),
-        StringToHexadecimalError::InvalidLength { length: 18 }
+        StringToEuiError::InvalidLength { length: 18 }
     );
 }
 
@@ -451,7 +448,7 @@ fn test_eui64_try_from_invalid_length() {
 fn test_eui48_try_from_invalid_character() {
     assert_eq!(
         Eui48::try_from("ad7e54972eja").err().unwrap(),
-        StringToHexadecimalError::InvalidChar { char: 'j' }
+        StringToEuiError::InvalidChar { char: 'j' }
     );
 }
 
@@ -459,7 +456,7 @@ fn test_eui48_try_from_invalid_character() {
 fn test_eui64_try_from_invalid_character() {
     assert_eq!(
         Eui64::try_from("ad7e54972ea721sa").err().unwrap(),
-        StringToHexadecimalError::InvalidChar { char: 's' }
+        StringToEuiError::InvalidChar { char: 's' }
     );
 }
 
@@ -467,17 +464,17 @@ fn test_eui64_try_from_invalid_character() {
 fn test_eui48_try_from_invalid_separator_position() {
     assert_eq!(
         Eui48::try_from(":4d7e:54:97:2e:ef").err().unwrap(),
-        StringToHexadecimalError::InvalidSeparatorPlace
+        StringToEuiError::InvalidSeparatorPlace
     );
 
     assert_eq!(
         Eui48::try_from("4d:7e:54:97:2eef:").err().unwrap(),
-        StringToHexadecimalError::InvalidSeparatorPlace
+        StringToEuiError::InvalidSeparatorPlace
     );
 
     assert_eq!(
         Eui48::try_from("4d::7e54:97:2e:ef").err().unwrap(),
-        StringToHexadecimalError::InvalidSeparatorPlace
+        StringToEuiError::InvalidSeparatorPlace
     );
 }
 
@@ -485,17 +482,17 @@ fn test_eui48_try_from_invalid_separator_position() {
 fn test_eui64_try_from_invalid_separator_position() {
     assert_eq!(
         Eui64::try_from(":4d7e:54:00:00:97:2e:ef").err().unwrap(),
-        StringToHexadecimalError::InvalidSeparatorPlace
+        StringToEuiError::InvalidSeparatorPlace
     );
 
     assert_eq!(
         Eui64::try_from("4d:7e:54:00:00:97:2eef:").err().unwrap(),
-        StringToHexadecimalError::InvalidSeparatorPlace
+        StringToEuiError::InvalidSeparatorPlace
     );
 
     assert_eq!(
         Eui64::try_from("4d::7e54:00:00:97:2e:ef").err().unwrap(),
-        StringToHexadecimalError::InvalidSeparatorPlace
+        StringToEuiError::InvalidSeparatorPlace
     );
 }
 
@@ -503,7 +500,7 @@ fn test_eui64_try_from_invalid_separator_position() {
 fn test_eui48_try_from_string_different_separators() {
     assert_eq!(
         Eui48::try_from("4d:7e:54-97:2e:ef").err().unwrap(),
-        StringToHexadecimalError::OnlyOneSeparatorTypeExpected
+        StringToEuiError::OnlyOneSeparatorTypeExpected
     );
 }
 
@@ -511,6 +508,6 @@ fn test_eui48_try_from_string_different_separators() {
 fn test_eui64_try_from_string_different_separators() {
     assert_eq!(
         Eui64::try_from("4d:7e-54:00:00:97:2e-ef").err().unwrap(),
-        StringToHexadecimalError::OnlyOneSeparatorTypeExpected
+        StringToEuiError::OnlyOneSeparatorTypeExpected
     );
 }

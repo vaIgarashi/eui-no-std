@@ -1,4 +1,4 @@
-use crate::{string_to_hexadecimal, Eui48, Eui64, StringToHexadecimalError};
+use crate::{string_to_eui, Eui48, Eui64, StringToEuiError};
 use core::fmt;
 use serde::de::Visitor;
 use serde::de::{Error, Unexpected};
@@ -28,19 +28,19 @@ impl<'de> Visitor<'de> for Eui48Visitor {
 
         let mut result = [0; 6];
 
-        match string_to_hexadecimal(v, &mut result[..]) {
-            Err(StringToHexadecimalError::InvalidLength { length }) => {
+        match string_to_eui(v, &mut result[..]) {
+            Err(StringToEuiError::InvalidLength { length }) => {
                 return Err(Error::invalid_length(length, &self));
             }
-            Err(StringToHexadecimalError::InvalidChar { char }) => {
+            Err(StringToEuiError::InvalidChar { char }) => {
                 return Err(Error::invalid_value(Unexpected::Char(char), &self));
             }
-            Err(StringToHexadecimalError::InvalidSeparatorPlace) => {
+            Err(StringToEuiError::InvalidSeparatorPlace) => {
                 return Err(Error::custom(
                     "Separator must be placed after every second character",
                 ))
             }
-            Err(StringToHexadecimalError::OnlyOneSeparatorTypeExpected) => {
+            Err(StringToEuiError::OnlyOneSeparatorTypeExpected) => {
                 return Err(Error::custom("Only one type of separator should be used"));
             }
             Ok(()) => return Ok(Eui48(result)),
@@ -69,19 +69,19 @@ impl<'de> Visitor<'de> for Eui64Visitor {
 
         let mut result = [0; 8];
 
-        match string_to_hexadecimal(v, &mut result[..]) {
-            Err(StringToHexadecimalError::InvalidLength { length }) => {
+        match string_to_eui(v, &mut result[..]) {
+            Err(StringToEuiError::InvalidLength { length }) => {
                 return Err(Error::invalid_length(length, &self));
             }
-            Err(StringToHexadecimalError::InvalidChar { char }) => {
+            Err(StringToEuiError::InvalidChar { char }) => {
                 return Err(Error::invalid_value(Unexpected::Char(char), &self));
             }
-            Err(StringToHexadecimalError::InvalidSeparatorPlace) => {
+            Err(StringToEuiError::InvalidSeparatorPlace) => {
                 return Err(Error::custom(
                     "Separator must be placed after every second character",
                 ))
             }
-            Err(StringToHexadecimalError::OnlyOneSeparatorTypeExpected) => {
+            Err(StringToEuiError::OnlyOneSeparatorTypeExpected) => {
                 return Err(Error::custom("Only one type of separator should be used"));
             }
             Ok(()) => return Ok(Eui64(result)),
