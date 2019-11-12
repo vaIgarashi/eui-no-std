@@ -97,7 +97,9 @@ pub(crate) fn string_to_eui(input: &str, result: &mut [u8]) -> Result<(), String
     let mut separator_type = None;
     let mut separators = 0;
 
-    for (i, c) in input.to_uppercase().chars().enumerate() {
+    for (i, mut c) in input.chars().enumerate() {
+        c.make_ascii_uppercase();
+
         let hex_char_index = UPPERCASE_HEX_CHARS.iter().position(|&e| e == (c as u8));
 
         match hex_char_index {
