@@ -1,7 +1,7 @@
-use crate::{Eui48, Eui64, UPPERCASE_HEX_CHARS};
+use crate::{string_to_hexadecimal, Eui48, Eui64, StringToHexadecimalError};
 use core::fmt;
+use serde::de::Visitor;
 use serde::de::{Error, Unexpected};
-use serde::de::{Expected, Visitor};
 use serde::{Deserialize, Deserializer};
 
 struct Eui48Visitor;
@@ -27,9 +27,24 @@ impl<'de> Visitor<'de> for Eui48Visitor {
         }
 
         let mut result = [0; 6];
-        to_hexadecimal(v, &mut result[..], &self)?;
 
-        Ok(Eui48(result))
+        match string_to_hexadecimal(v, &mut result[..]) {
+            Err(StringToHexadecimalError::InvalidLength { length }) => {
+                return Err(Error::invalid_length(length, &self));
+            }
+            Err(StringToHexadecimalError::InvalidChar { char }) => {
+                return Err(Error::invalid_value(Unexpected::Char(char), &self));
+            }
+            Err(StringToHexadecimalError::InvalidSeparatorPlace) => {
+                return Err(Error::custom(
+                    "Separator must be placed after every second character",
+                ))
+            }
+            Err(StringToHexadecimalError::OnlyOneSeparatorTypeExpected) => {
+                return Err(Error::custom("Only one type of separator should be used"));
+            }
+            Ok(()) => return Ok(Eui48(result)),
+        }
     }
 }
 
@@ -53,69 +68,25 @@ impl<'de> Visitor<'de> for Eui64Visitor {
         }
 
         let mut result = [0; 8];
-        to_hexadecimal(v, &mut result[..], &self)?;
 
-        Ok(Eui64(result))
-    }
-}
-
-fn to_hexadecimal<E>(v: &str, result: &mut [u8], exp: &dyn Expected) -> Result<(), E>
-where
-    E: Error,
-{
-    let mut separator_type = None;
-    let mut separators = 0;
-
-    for (i, c) in v.to_uppercase().chars().enumerate() {
-        let hex_char_index = UPPERCASE_HEX_CHARS.iter().position(|&e| e == (c as u8));
-
-        match hex_char_index {
-            Some(value) => {
-                let current_pos = i - separators;
-                let index = current_pos / 2;
-
-                if index > result.len() - 1 {
-                    return Err(Error::invalid_length(v.len() - separators, exp));
-                }
-
-                if current_pos % 2 == 0 {
-                    result[index] = (value as u8) << 4 & 0xF0
-                } else {
-                    result[index] |= value as u8 & 0xF
-                }
+        match string_to_hexadecimal(v, &mut result[..]) {
+            Err(StringToHexadecimalError::InvalidLength { length }) => {
+                return Err(Error::invalid_length(length, &self));
             }
-            None if c == ':' || c == '-' => {
-                // String may contain separator after every second character.
-                if i == 0 || i == v.len() || (i + 1) % 3 != 0 {
-                    return Err(Error::custom(
-                        "Separator must be placed after every second character",
-                    ));
-                }
-
-                match separator_type {
-                    Some(t) => {
-                        if t != c {
-                            return Err(Error::custom("Only one type of separator should be used"));
-                        }
-                    }
-                    None => separator_type = Some(c),
-                }
-
-                separators += 1;
+            Err(StringToHexadecimalError::InvalidChar { char }) => {
+                return Err(Error::invalid_value(Unexpected::Char(char), &self));
             }
-            None => {
-                // Displaying char with original case sensitivity.
-                let original_char_sensitivity = v.as_bytes()[i] as char;
-
-                return Err(Error::invalid_value(
-                    Unexpected::Char(original_char_sensitivity),
-                    exp,
-                ));
+            Err(StringToHexadecimalError::InvalidSeparatorPlace) => {
+                return Err(Error::custom(
+                    "Separator must be placed after every second character",
+                ))
             }
+            Err(StringToHexadecimalError::OnlyOneSeparatorTypeExpected) => {
+                return Err(Error::custom("Only one type of separator should be used"));
+            }
+            Ok(()) => return Ok(Eui64(result)),
         }
     }
-
-    Ok(())
 }
 
 impl<'de> Deserialize<'de> for Eui48 {
@@ -317,6 +288,14 @@ mod tests {
 
     #[test]
     fn test_eui48_deserialize_different_separators() {
+        assert_de_tokens_error::<Eui48>(
+            &[Token::Str("4d:7e:54-97:2e:ef")],
+            "Only one type of separator should be used",
+        );
+    }
+
+    #[test]
+    fn test_eui64_deserialize_different_separators() {
         assert_de_tokens_error::<Eui64>(
             &[Token::Str("4d:7e-54:00:00:97:2e-ef")],
             "Only one type of separator should be used",
