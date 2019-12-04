@@ -97,10 +97,15 @@ pub(crate) fn string_to_eui(input: &str, result: &mut [u8]) -> Result<(), String
     let mut separator_type = None;
     let mut separators = 0;
 
-    for (i, mut c) in input.chars().enumerate() {
-        c.make_ascii_uppercase();
+    for (i, c) in input.chars().enumerate() {
+        let char_byte = c as u8;
 
-        let hex_char_index = UPPERCASE_HEX_CHARS.iter().position(|&e| e == (c as u8));
+        let hex_char_index = match char_byte {
+            b'A'..=b'F' => Some(char_byte - b'A' + 10),
+            b'a'..=b'f' => Some(char_byte - b'a' + 10),
+            b'0'..=b'9' => Some(char_byte - b'0'),
+            _ => None,
+        };
 
         match hex_char_index {
             Some(value) => {
@@ -137,12 +142,7 @@ pub(crate) fn string_to_eui(input: &str, result: &mut [u8]) -> Result<(), String
                 separators += 1;
             }
             None => {
-                // Displaying char with original case sensitivity.
-                let original_char_sensitivity = input.as_bytes()[i] as char;
-
-                return Err(StringToEuiError::InvalidChar {
-                    char: original_char_sensitivity,
-                });
+                return Err(StringToEuiError::InvalidChar { char: c });
             }
         }
     }
