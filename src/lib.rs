@@ -26,9 +26,9 @@ use heapless::{String, Vec};
 
 const UPPERCASE_HEX_CHARS: &[u8] = b"0123456789ABCDEF";
 
-#[derive(Eq, PartialEq, Copy, Clone, Debug, hash32_derive::Hash32)]
+#[derive(Eq, PartialEq, Copy, Clone, Debug, Hash, hash32_derive::Hash32)]
 pub struct Eui48([u8; 6]);
-#[derive(Eq, PartialEq, Copy, Clone, Debug, hash32_derive::Hash32)]
+#[derive(Eq, PartialEq, Copy, Clone, Debug, Hash, hash32_derive::Hash32)]
 pub struct Eui64([u8; 8]);
 
 macro_rules! to_hex_string {
